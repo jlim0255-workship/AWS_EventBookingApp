@@ -1,7 +1,6 @@
-// TODO: ADD in url and add explanation
-const API_BASE_URL = "";
+const API_BASE_URL = "https://kulybaaq0e.execute-api.ap-southeast-1.amazonaws.com";
 
-function formDate(dateString){
+function formatDate(dateString){
     if (!dateString) {return "Date To Be Announced"};
     return new Date(dateString).toLocaleDateString('en-MY', {
         weekday: 'long',
