@@ -47,7 +47,7 @@ export const handler = async (event) => {
 
   try {
     // [1] GET /event/{event_id}
-    if (method === "GET" && path.startsWith("/event")) {
+    if (method === "GET" && path.startsWith("/event/")) {
       const eventId = pathParams.event_id;
       console.log("Looking for event_id", eventId);
 
@@ -64,7 +64,7 @@ export const handler = async (event) => {
     }
 
     // [2] GET /stats/{event_id}
-    if (method === "GET" && path.startsWith("/stats")) {
+    if (method === "GET" && path.startsWith("/stats/")) {
       const eventId = pathParams.event_id;
       console.log("Looking for stats for event_id", eventId);
 
@@ -111,14 +111,13 @@ export const handler = async (event) => {
                   TableName: "event-rsvp-responses",
                   Item: {
                     pk: { S: `EVENT#${event_id}` },
-                    sk: { S: `ATTENDEE#${email}` },
+                    sk: { S: `RESPONDENT#${email}` },
                     full_name: { S: full_name },
                     response: { S: response },
                     created_at: { N: String(now) },
                   },
-                  ConditionExpression:
-                    "attribute_not_exists(pk) AND attribute_not_exists(sk)",
-                },
+                  ConditionExpression: "attribute_not_exists(pk) AND attribute_not_exists(sk)"
+                }
               },
               {
                 Update: {
@@ -162,14 +161,14 @@ export const handler = async (event) => {
     }
 
     // [4] GET /attendees/{event_id}
-    if (method === "GET" && path.startsWith("/attendees")) {
+    if (method === "GET" && path.startsWith("/attendees/")) {
       const eventId = pathParams.event_id;
       const responseType = queryParams.response; // optional filter
 
       let keyCondition = "pk = :pk AND begins_with(sk, :prefix)";
       let expressionValues = {
         ":pk": { S: `EVENT#${eventId}` },
-        ":prefix": { S: "RESPONDENT#" },
+        ":prefix": { S: "RESPONDENT#" }
       };
 
       // filter by response type if provided
@@ -183,19 +182,18 @@ export const handler = async (event) => {
           TableName: "event-rsvp-responses",
           KeyConditionExpression: keyCondition,
           ExpressionAttributeValues: expressionValues,
-        })
-      );
+        }));
 
       let attendees = result.Items.map((item) => ({
-        full_name: item.full_name.S,
+        full_name: item.full_name?.S,
         email: item.email?.S,
         response: item.response?.S,
-        timestamp: parseInt(item.timestamp?.N),
+        timestamp: parseInt(item.timestamp?.N)
       }));
 
       // filter by response type if specified
       if (responseType) {
-        attendees = attendees.filter((a) => a.response === responseType);
+        attendees = attendees.filter((attendee) => attendee.response === responseType);
       }
 
       return json(attendees);
